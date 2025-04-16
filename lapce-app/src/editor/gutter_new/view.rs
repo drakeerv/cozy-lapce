@@ -60,7 +60,8 @@ fn gutter_marker_code_len_svg_view(
                         log::error!("code_lens is empty: {} {:?}", line, code_lens);
                         return;
                     };
-                    window_tab_data_clone.show_code_lens(true, plugin_id, offset, lens);
+                    window_tab_data_clone
+                        .show_code_lens(true, plugin_id, offset, lens);
                 }
             }
         })
@@ -80,7 +81,12 @@ pub fn editor_gutter_new(
                 |data| data.clone(),
                 move |data| {
                     let data_clone = data.clone();
-                    gutter_data_view(data_clone, window_tab_data.clone(), doc.clone(), config.clone())
+                    gutter_data_view(
+                        data_clone,
+                        window_tab_data.clone(),
+                        doc.clone(),
+                        config.clone(),
+                    )
                 },
             )
             .style(|style| style.height_full().width_full()),
@@ -155,7 +161,9 @@ fn marker_view(
             data.origin_line_start,
             doc_signal.clone(),
         ),
-        GutterMarker::Breakpoint => gutter_marker_breakpoint_svg_view(config.clone()),
+        GutterMarker::Breakpoint => {
+            gutter_marker_breakpoint_svg_view(config.clone())
+        },
     };
 
     let origin_line_start = data.origin_line_start;
