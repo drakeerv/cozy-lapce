@@ -50,6 +50,7 @@ fn gutter_marker_code_len_svg_view(
                 .hover(|s| s.cursor(CursorStyle::Pointer))
         })
         .on_click_stop({
+            let window_tab_data_clone = window_tab_data.clone();
             move |_| {
                 let code_lens = doc.get_untracked().code_lens.get_untracked();
                 if let Some(line) = line {
@@ -59,7 +60,7 @@ fn gutter_marker_code_len_svg_view(
                         log::error!("code_lens is empty: {} {:?}", line, code_lens);
                         return;
                     };
-                    window_tab_data.show_code_lens(true, plugin_id, offset, lens);
+                    window_tab_data_clone.show_code_lens(true, plugin_id, offset, lens);
                 }
             }
         })
@@ -77,7 +78,10 @@ pub fn editor_gutter_new(
             dyn_stack(
                 move || gutter_data(window_tab_data_clone.clone(), &e_data_gutter),
                 |data| data.clone(),
-                move |data| gutter_data_view(&data, &window_tab_data, doc, config),
+                move |data| {
+                    let data_clone = data.clone();
+                    gutter_data_view(data_clone, window_tab_data.clone(), doc.clone(), config.clone())
+                },
             )
             .style(|style| style.height_full().width_full()),
         )
@@ -96,38 +100,37 @@ pub fn editor_gutter_new(
         let width = last_line_width + size * 2.0 + 8.0;
         log::info!("signal_last_line ={last_line_width} size={size}");
         style
-            .width(width) // 父组件宽度
+            .width(width) // Parent component width
             .height_full()
     })
     .debug_name("editor_gutter")
 }
 
 fn gutter_data_view(
-    data: &GutterData,
-    window_tab_data: &WindowWorkspaceData,
+    data: GutterData,
+    window_tab_data: WindowWorkspaceData,
     doc: DocSignal,
     config: WithLapceConfig,
 ) -> impl View {
-    let data_clone = data.clone();
     let line_height = window_tab_data.common.ui_line_height;
     let paint_point_y = data.paint_point_y;
+    let style_font_family = data.style_font_family.clone();
+
     container((
-        static_label(data_clone.display_line_num())
+        static_label(data.display_line_num())
             .style(move |style| {
                 style
                     .height_full()
-                    .width(data_clone.style_width)
-                    .font_size(data_clone.style_font_size as f32 - 1.0)
-                    .color(data_clone.style_color)
+                    .width(data.style_width)
+                    .font_size(data.style_font_size as f32 - 1.0)
+                    .color(data.style_color)
                     .padding_horiz(4.0)
-                    .font_family(StyleValue::Val(
-                        data_clone.style_font_family.clone(),
-                    ))
+                    .font_family(StyleValue::Val(style_font_family.clone()))
                     .align_items(AlignItems::Center)
                     .justify_content(JustifyContent::FlexEnd)
             })
             .debug_name("line_num"),
-        marker_view(data, window_tab_data.clone(), config, doc)
+        marker_view(data, window_tab_data.clone(), config.clone(), doc.clone())
             .debug_name("break_point"),
     ))
     .style(move |style| {
@@ -139,21 +142,22 @@ fn gutter_data_view(
 }
 
 fn marker_view(
-    data: &GutterData,
+    data: GutterData,
     window_tab_data: WindowWorkspaceData,
     config: WithLapceConfig,
     doc_signal: DocSignal,
 ) -> impl View {
     let window_tab_data_click = window_tab_data.clone();
     let svg = match data.marker {
-        GutterMarker::None => gutter_marker_none_svg_view(config),
+        GutterMarker::None => gutter_marker_none_svg_view(config.clone()),
         GutterMarker::CodeLen => gutter_marker_code_len_svg_view(
-            window_tab_data,
+            window_tab_data.clone(),
             data.origin_line_start,
-            doc_signal,
+            doc_signal.clone(),
         ),
-        GutterMarker::Breakpoint => gutter_marker_breakpoint_svg_view(config),
+        GutterMarker::Breakpoint => gutter_marker_breakpoint_svg_view(config.clone()),
     };
+
     let origin_line_start = data.origin_line_start;
     container(svg)
         .style(move |s| {
@@ -172,7 +176,7 @@ fn marker_view(
             if let Some(line) = origin_line_start {
                 window_tab_data_click.common.internal_command.send(
                     crate::command::InternalCommand::AddOrRemoveBreakPoint {
-                        doc:      doc_signal,
+                        doc:      doc_signal.clone(),
                         line_num: line,
                     },
                 );

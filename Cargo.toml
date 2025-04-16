@@ -24,7 +24,7 @@ members = ["lapce-app", "lapce-proxy", "lapce-rpc", "lapce-core", "crates/*"]
 
 [workspace.package]
 version      = "0.1.0"
-edition      = "2021"
+edition      = "2024"
 license      = "Apache-2.0"
 homepage     = "https://lapce.dev"
 authors      = ["Jiemin Huang <huangjiemin@gmail.com>"]
@@ -60,7 +60,7 @@ strum             = { version = "0.26.2" }
 strum_macros      = { version = "0.26.2" }
 tar               = { version = "0.4" }
 tempfile          = { version = "3.10.1" }
-    thiserror         = { version = "1.0" }
+thiserror         = { version = "1.0" }
 toml              = { version = "*" }
 toml_edit         = { version = "0.20.2", features = ["serde"] }
 url               = { version = "2.5.0" }

@@ -456,7 +456,7 @@ impl AppData {
         window_id: WindowId,
         info: WindowInfo,
         files: Vec<PathObject>,
-    ) -> impl View {
+    ) -> impl View + use<> {
         let app_view_id = create_rw_signal(floem::ViewId::new());
         let window_data = WindowData::new(
             window_id,
@@ -2322,7 +2322,7 @@ fn palette_item(
     index: ReadSignal<usize>,
     palette_item_height: f64,
     config: WithLapceConfig,
-    keymap: Option<&KeyMap>,
+    keymap: Option<KeyMap>,
 ) -> impl View {
     match &item.content {
         PaletteItemContent::File { path, .. }
@@ -2640,7 +2640,8 @@ fn palette_item(
         | PaletteItemContent::Command { .. } => {
             let text = item.filter_text;
             let indices = item.indices;
-            let keys = if let Some(keymap) = keymap {
+            let keys = if let Some(ref keymap) = keymap {
+                // Borrow the owned keymap for iteration
                 keymap
                     .key
                     .iter()
@@ -2834,8 +2835,8 @@ fn palette_content(
                         };
 
                         cmd_kind
-                            .and_then(|kind| keymaps.get(kind.str()))
-                            .and_then(|maps| maps.first())
+                            .and_then(|kind| keymaps.get(kind.str())) // Get Option<&Vec<KeyMap>>
+                            .and_then(|maps| maps.first().cloned()) // Get Option<&KeyMap> and clone it to Option<KeyMap>
                     };
                     container(palette_item(
                         workspace,

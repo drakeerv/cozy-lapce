@@ -39,9 +39,17 @@ pub fn common_tab_header<T: Clone + TabHead + 'static>(
             scroll({
                 let tabs = tabs.clone();
                 dyn_stack(
-                    move || tabs.tabs(),
+                    move || {
+                        // Clone the tabs to ensure the iterator has a 'static
+                        // lifetime
+                        tabs.tabs().into_iter().collect::<Vec<_>>()
+                    },
                     |(tab, _close_manager): &(Tab<T>, CloseManager<T>)| tab.key(),
                     |(tab, close_manager): (Tab<T>, CloseManager<T>)| {
+                        // Create new ownership of tab and close_manager inside the
+                        // view_content call
+                        let tab = tab.clone();
+                        let close_manager = close_manager.clone();
                         tab.view_content(close_manager)
                     },
                 )
@@ -247,7 +255,10 @@ impl<T: Clone + TabHead + 'static> Tab<T> {
         })
     }
 
-    fn view_content(&self, close_manager: CloseManager<T>) -> impl View + 'static {
+    fn view_content(
+        &self,
+        close_manager: CloseManager<T>,
+    ) -> impl View + 'static + use<T> {
         let config = self.config;
         let active = self.active;
         let rect = self.rect;
